@@ -1,0 +1,32 @@
+pipeline{
+agent any
+environment{
+IMAGE_NAME='ashudockerhub/maven'
+CREDENTIALS=credentials('dockerId')
+}
+stages{
+stage('Checkout'){
+steps{
+git branch:'main', url:'https://github.com/mca014ashritha-design/maven.git',credentialId:'dockerId'
+}
+}
+stage('Build'){
+steps{
+sh 'mvn clean package-DskipTests'
+}
+}
+stage('Build docker image')
+{
+steps{
+script{
+dockerImage=docker.build('${IMAGE_NAME}')
+}
+}
+}
+stage('Push'){
+steps{
+script{
+docker.withRegistry('https://index.docker.io/v1/','dockerId'){
+dockerImage.push()
+}
+}
