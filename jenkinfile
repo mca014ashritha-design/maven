@@ -1,39 +1,54 @@
 pipeline {
     agent any
+
     environment {
         IMAGE_NAME = 'ashudockerhub/maven'
-        CREDENTIALS = credentials('dockerId')
+        DOCKER_CREDENTIALS = 'dockerId' // Jenkins credential ID for Docker Hub
     }
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/mca014ashritha-design/maven.git', credentialsId: 'dockerId'
+                git branch: 'main', url: 'https://github.com/mca014ashritha-design/maven.git', credentialsId: "${DOCKER_CREDENTIALS}"
             }
         }
-        stage('Build') {
+
+        stage('Build Maven Project') {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
         }
-        stage('Build docker image') {
+
+        stage('Build Docker Image') {
             steps {
                 script {
-                    // Declare dockerImage variable outside of the script block
-                    def dockerImage = docker.build("${IMAGE_NAME}")
+                    // Assign dockerImage at script level (global within pipeline)
+                    dockerImage = docker.build("${IMAGE_NAME}")
                 }
             }
         }
-        stage('Push') {
+
+        stage('Push Docker Image') {
             steps {
                 script {
-                    // Make sure dockerImage is accessible here
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerId') {
-                        dockerImage.push()
+                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS}") {
+                        dockerImage.push('latest')       // Push latest tag
+                        dockerImage.push("${env.BUILD_NUMBER}") // Optional: tag with build number
                     }
                 }
             }
         }
     }
+
+    post {
+        always {
+            cleanWs() // Clean workspace after build
+        }
+        success {
+            echo "Pipeline completed successfully! Docker image: ${IMAGE_NAME}"
+        }
+        failure {
+            echo "Pipeline failed. Check logs for details."
+        }
+    }
 }
-
-
