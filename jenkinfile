@@ -18,12 +18,13 @@ pipeline {
         }
 
         stage('Build docker image') {
-            steps {
-                script {
-                    dockerImage = docker.build("${IMAGE_NAME}")  // Proper use of the IMAGE_NAME environment variable
-                }
-            }
+    steps {
+        script {
+            def dockerImage = docker.build("${IMAGE_NAME}")
         }
+    }
+}
+
 
         stage('Push') {
             steps {
