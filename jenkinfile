@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         IMAGE_NAME = 'ashudockerhub/maven'
-        CREDENTIALS = credentials('dockerId')  // Credentials used for DockerHub login
+        CREDENTIALS = credentials('dockerId')
     }
     stages {
         stage('Checkout') {
@@ -10,31 +10,30 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/mca014ashritha-design/maven.git', credentialsId: 'dockerId'
             }
         }
-
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests' // Fixed space
+                sh 'mvn clean package -DskipTests'
             }
         }
-
         stage('Build docker image') {
-    steps {
-        script {
-            def dockerImage = docker.build("${IMAGE_NAME}")
+            steps {
+                script {
+                    // Declare dockerImage variable outside of the script block
+                    def dockerImage = docker.build("${IMAGE_NAME}")
+                }
+            }
         }
-    }
-}
-
-
         stage('Push') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerId') {  // Docker registry login
-                        dockerImage.push()  // Push the image to Docker Hub
+                    // Make sure dockerImage is accessible here
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerId') {
+                        dockerImage.push()
                     }
                 }
             }
         }
     }
 }
+
 
